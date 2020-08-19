@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- boardImple이 있을경우  namespacea명은 자유롭게 명명한다.
+<mapper namespace="boardNameSpace"> 
+-->
+<mapper namespace="com.kpc.mapper.WordCloudMapper"> 
+
+	
+	<select id="allList" resultType="com.kpc.wordcloud.ReviewVO">
+	 	select seq, movie_code as movieCode, review, site
+		from review 
+		order by seq
+	</select>
+	
+	<select id="wcloudList" parameterType="String" resultType="com.kpc.wordcloud.WordCloudVO">
+	 	select rword, count(1) as rcnt
+		from review_parsing 
+		where movie_code = #{movieCode}
+		group by rword
+		having count(1) > 50
+	</select>
+	
+	<insert id="binsert" parameterType="com.kpc.wordcloud.WordCloudVO">
+		insert into review_parsing(seq, movie_code, site, rword, rcnt)
+		values(review_parsing_seq.nextval, #{movieCode}, #{site}, #{rword},#{rcnt})
+	</insert>
+	
+</mapper>

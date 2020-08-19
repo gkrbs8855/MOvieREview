@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- boardImple이 있을경우  namespacea명은 자유롭게 명명한다.
+<mapper namespace="boardNameSpace"> 
+-->
+<mapper namespace="com.kpc.mapper.BoardMapper"> 
+	<resultMap id="myboardMap" type="com.kpc.board.BoardVO">
+		<id property="bseq" column="bseq" />
+		<result property="title" column="title"/>
+		<result property="contents" column="contents"/>
+		<result property="regid" column="regid"/>
+		<result property="regdate" column="regdate"/>
+	</resultMap>
+	<resultMap id="myMovieMap" type="com.kpc.board.MovieVO">
+		<id property="movieCode" column="movie_code" />
+		<result property="title" column="title"/>
+		<result property="link" column="link"/>
+		<result property="image" column="image"/>
+		<result property="subtitle" column="sub_title"/>
+		<result property="puddate" column="pud_date"/>
+		<result property="director" column="director"/>
+		<result property="actor" column="actor"/>
+		<result property="score" column="score"/>
+		<result property="overview" column="overview"/>
+		<result property="genres" column="genres"/>
+		<result property="date" column="release_date"/>
+		<result property="count" column="count_review"/>
+	</resultMap>
+	
+	<resultMap id="myReviewMap" type="com.kpc.board.ReviewVO">
+      <id property="code" column="code" />
+      <result property="score" column="score"/>
+      <result property="review" column="review"/>
+      <result property="site" column="site"/>
+      <result property="emotion" column="emotion"/>
+   </resultMap>
+   
+   
+   
+	<!-- <collection property="rlist" columnPrefix="r_" javaType="ArrayList" resultMap="replyMap" /> -->
+	
+	<select id="boardCount" resultType="Integer">
+		select count(*) as cnt from board
+	</select>
+	<select id="allList" resultType="com.kpc.board.BoardVO">
+	<!-- <select id="allList" resultMap="myboardMap"> -->
+	 	select bseq,title,contents, regid, to_char(regdate,'yyyy-mm-dd') as regdate 
+		from board 
+		order by bseq desc
+	</select>
+	
+	<select id="reviewlist" parameterType="map" resultType="com.kpc.board.ScoreVO">
+	select score,count(1) as countperson 
+	from review 
+	where movie_code=#{movieCode} and score <![CDATA[ < ]]><![CDATA[ > ]]> 0
+	group by score
+	order by score
+	</select>
+	
+	<select id="emotionlist_low" parameterType="map" resultType="com.kpc.board.ScoreVO">
+	select emotion as score,count(1) as countperson 
+	from review 
+	where movie_code=#{movieCode} and emotion <![CDATA[ < ]]><![CDATA[ > ]]> -99 and score between 1 and 4
+	group by emotion
+	order by emotion
+	</select>
+	
+	<select id="emotionlist_high" parameterType="map" resultType="com.kpc.board.ScoreVO">
+	select emotion as score,count(1) as countperson 
+	from review 
+	where movie_code=#{movieCode} and emotion <![CDATA[ < ]]><![CDATA[ > ]]> -99 and score between 7 and 10
+	group by emotion
+	order by emotion
+	</select>
+	
+	<select id="reviewSelectList" parameterType="map" resultMap="myReviewMap">
+      <!-- select * from review
+      where movie_code = #{code} and rownum between #{start} and #{end} -->
+      
+      select tt.* 
+      from (select rownum as rnum, t.* 
+           from ( select *  from review 
+                  where movie_code = #{code} and review <![CDATA[ < ]]><![CDATA[ > ]]> '.' and emotion <![CDATA[ < ]]><![CDATA[ > ]]> -99
+                  order by seq desc) t) tt 
+      where rnum between #{start} and #{end}
+   </select>
+	
+	
+	<select id="movieselect" parameterType="map" resultMap="myMovieMap">
+	select * from movie
+	where movie_code=#{movieCode}
+	</select>
+	
+	<select id="movielist" resultMap="myMovieMap">
+	<!-- <select id="allList" resultMap="myboardMap"> -->
+	 	select * from movie order by seq
+	</select>
+	
+	<select id="blist" parameterType="map" resultType="com.kpc.board.BoardVO">
+		<!-- resultType="com.kpc.board.BoardVO">   resultMap="myboardMap"-->
+		select tt.*
+		from (
+		    select  rownum rnum, t.*
+		    from
+		        (select bseq, title, contents, regid,to_char(regdate, 'YYYY-MM-DD') regdate from board order by bseq desc) t
+		) tt
+		where rnum <![CDATA[>=]]> #{startSeq} and rnum <![CDATA[<=]]> #{endSeq}
+	</select>
+
+	<select id="blistBySearch" parameterType="map" resultType="com.kpc.board.BoardVO">
+	<!-- '%' ||  #{keyword} || '%' -->
+		select bseq,title,contents, regid, to_char(regdate,'yyyy-mm-dd') as regdate 
+		from board 
+		where ${searchKey} like '%' || #{searchStr} || '%'
+		order by bseq desc
+	</select>
+	
+	<select id="bview" parameterType="Integer" resultMap="myboardMap">
+		select bseq,title,contents, regid, to_char(regdate,'yyyy-mm-dd') as regdate
+		from board 
+		where bseq=#{bseq}
+	</select>
+	
+	<update id="bupdate" parameterType="com.kpc.board.BoardVO">
+		update board 
+		set title=#{title},contents=#{contents},regid=#{regid}
+		where bseq=#{bseq}
+	</update>
+	
+	<insert id="binsert" parameterType="com.kpc.board.BoardVO">
+		insert into board(bseq, title, contents, regid)
+		values(board_seq.nextval, #{title}, #{contents}, #{regid})
+	</insert>
+	
+
+	<delete id="bdelete" parameterType="Integer">
+		delete 
+		from board
+		where bseq=#{bseq}
+	</delete>
+</mapper>
